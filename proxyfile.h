@@ -22,13 +22,15 @@
 
 #include <stdio.h>
 
-typedef struct {
+typedef struct
+{
     void *next, *prev;
     char *file_path, *md5, *proxy_path;
     int fd;
 } proxyfile;
 
-typedef struct {
+typedef struct
+{
     proxyfile *head, *tail;
     int used;
     int PROXY_FILE_LEN;

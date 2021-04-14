@@ -51,13 +51,15 @@ proxyfile_list *new_proxyfile_list()
  */
 proxyfile *new_proxyfile(proxyfile_list *list, char *file_path)
 {
-    if(list->head == NULL) { /* first proxyfile */
+    if (list->head == NULL)
+    { /* first proxyfile */
         list->head = (proxyfile *)malloc(sizeof(proxyfile));
         list->tail = list->head;
         list->tail->next = NULL;
         list->tail->prev = NULL;
     }
-    else { /* append to existing linked list */
+    else
+    { /* append to existing linked list */
         proxyfile *next = (proxyfile *)malloc(sizeof(proxyfile));
         next->prev = list->tail;
         next->next = NULL;
@@ -69,7 +71,7 @@ proxyfile *new_proxyfile(proxyfile_list *list, char *file_path)
 
     cur->md5 = md5sum(file_path); /* just assign the already assigned addr */
 
-    cur->proxy_path = (char *)malloc((list->PROXY_FILE_LEN + 1)*sizeof(char));
+    cur->proxy_path = (char *)malloc((list->PROXY_FILE_LEN + 1) * sizeof(char));
     strcpy(cur->proxy_path, list->SANDBOX_DIR);
     strcat(cur->proxy_path, cur->md5);
 
@@ -85,12 +87,14 @@ proxyfile *new_proxyfile(proxyfile_list *list, char *file_path)
  *
  * Returns a (proxyfile *) pointer.
  */
-proxyfile *search_proxyfile(proxyfile_list *list, char *file_path) {
+proxyfile *search_proxyfile(proxyfile_list *list, char *file_path)
+{
     char *md5 = md5sum(file_path);
-    
+
     proxyfile *cur = list->head;
-    while(cur != NULL) {
-        if(strcmp(cur->md5, md5) == 0)
+    while (cur != NULL)
+    {
+        if (strcmp(cur->md5, md5) == 0)
             return cur;
         cur = cur->next;
     }
@@ -103,13 +107,14 @@ proxyfile *search_proxyfile(proxyfile_list *list, char *file_path) {
  * @list: the proxyfile_list
  * @pf:   the proxyfile
  */
-void delete_proxyfile(proxyfile_list *list, proxyfile *pf) {
-    if(pf->prev)
+void delete_proxyfile(proxyfile_list *list, proxyfile *pf)
+{
+    if (pf->prev)
         ((proxyfile *)pf->prev)->next = pf->next;
     else /* only head has this property */
         list->head = pf->next;
 
-    if(pf->next)
+    if (pf->next)
         ((proxyfile *)pf->next)->prev = pf->prev;
 
     free(pf->file_path);
@@ -126,9 +131,11 @@ void delete_proxyfile(proxyfile_list *list, proxyfile *pf) {
  * Prints each MD5 and its real file path.  This is done only when the -m
  * arg is passed to FSSB.
  */
-void print_map(proxyfile_list *list, FILE *log_file) {
+void print_map(proxyfile_list *list, FILE *log_file)
+{
     proxyfile *cur = list->head;
-    while(cur != NULL) {
+    while (cur != NULL)
+    {
         fprintf(log_file, "    + %s = %s\n", cur->md5, cur->file_path);
         cur = cur->next;
     }
@@ -149,7 +156,8 @@ extern void write_map(proxyfile_list *list, char *SANDBOX_DIR)
     FILE *pfm = fopen(proxyfile_map, "w");
 
     proxyfile *cur = list->head;
-    while(cur != NULL) {
+    while (cur != NULL)
+    {
         fprintf(pfm, "%s%s = %s\n", SANDBOX_DIR, cur->md5, cur->file_path);
         cur = cur->next;
     }
@@ -164,7 +172,8 @@ extern void write_map(proxyfile_list *list, char *SANDBOX_DIR)
 void remove_proxy_files(proxyfile_list *list)
 {
     proxyfile *cur = list->head;
-    while(cur != NULL) {
+    while (cur != NULL)
+    {
         remove(cur->proxy_path);
         cur = cur->next;
     }

@@ -31,8 +31,10 @@
  * @arg:  the argument
  * @desc: help text that's supposed to accompany the argument
  */
-void insert_help(char *arg, char *desc, int num_vals) {
-    if(help_list_count >= help_list_allocated) {
+void insert_help(char *arg, char *desc, int num_vals)
+{
+    if (help_list_count >= help_list_allocated)
+    {
         help_list_allocated *= 2;
         help_list = (help *)realloc(help_list, help_list_allocated);
     }
@@ -45,10 +47,11 @@ void insert_help(char *arg, char *desc, int num_vals) {
 /**
  * build_help - builds the list of arguments and descriptions.
  */
-void build_help() {
+void build_help()
+{
     help_list_count = 0;
 
-    help_list = (help *)malloc(sizeof(help)*INIT_HELP_ALLOC);
+    help_list = (help *)malloc(sizeof(help) * INIT_HELP_ALLOC);
     help_list_allocated = INIT_HELP_ALLOC;
 
     insert_help("-h", "show this help and exit", 0);
@@ -69,19 +72,23 @@ void check_args_validity(int argc, char **argv)
 {
     int i, j;
 
-    for(i = 1; i < argc; i++) {
+    for (i = 1; i < argc; i++)
+    {
         /* it's the child's arguments from here on */
-        if(strcmp(argv[i], "--") == 0)
+        if (strcmp(argv[i], "--") == 0)
             break;
 
         int recognized = 0;
-        for(j = 0; j < help_list_count; j++) {
-            if(strcmp(argv[i], help_list[j].arg) == 0) {
+        for (j = 0; j < help_list_count; j++)
+        {
+            if (strcmp(argv[i], help_list[j].arg) == 0)
+            {
                 recognized = 1;
                 i += help_list[j].num_vals;
             }
         }
-        if(!recognized) {
+        if (!recognized)
+        {
             fprintf(stderr, "fssb: error: invalid option '%s'\n\n", argv[i]);
             print_help();
             exit(1);
@@ -100,31 +107,34 @@ int help_requested(int argc, char **argv)
 {
     int i, other_args = 0, show_help = 0;
 
-    for(i = 1; i < argc; i++) {
-        if(strcmp(argv[i], "-h") == 0)
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-h") == 0)
             show_help = 1;
         else
             other_args = 1;
     }
 
-    if(!show_help)
+    if (!show_help)
         return 0;
 
-    if(other_args)
+    if (other_args)
         fprintf(stderr, "`-h` must be the only argument if it is used.\n\n");
 
     return 1;
 }
 
 /* comp function for qsort */
-int comp(const void *a, const void *b) {
+int comp(const void *a, const void *b)
+{
     return strcmp(((help *)a)->arg, ((help *)b)->arg);
 }
 
 /**
  * print_help - print the help manual
  */
-void print_help() {
+void print_help()
+{
     fprintf(stdout, "Usage: fssb [OPTIONS] -- COMMAND\n");
     fprintf(stdout, "\n\
 FSSB is a filesystem sandbox for Linux. It's useful if you want to run a\n\
@@ -134,12 +144,13 @@ program but also protect your files and directories from modification.\n\n");
     qsort(help_list, help_list_count, sizeof(help), comp);
 
     int i;
-    for(i = 0; i < help_list_count; i++) {
+    for (i = 0; i < help_list_count; i++)
+    {
         fprintf(stdout, "  %s", help_list[i].arg);
         int j;
-        for(j = 0; j < help_list[i].num_vals; j++)
+        for (j = 0; j < help_list[i].num_vals; j++)
             fprintf(stdout, " ARG");
-        for(j = 0; j < 15 - 4*help_list[i].num_vals; j++)
+        for (j = 0; j < 15 - 4 * help_list[i].num_vals; j++)
             fprintf(stdout, " ");
         fprintf(stdout, "%s\n", help_list[i].desc);
     }
@@ -164,15 +175,17 @@ FILE *get_log_file_obj(int argc, char **argv, int i)
     FILE *retval;
 
     struct stat sb;
-    if(i == argc - 1) {
+    if (i == argc - 1)
+    {
         fprintf(stderr, "fssb: error: no logging file specified\n");
         exit(1);
     }
 
     retval = fopen(argv[i + 1], "w");
-    if(retval == NULL) {
+    if (retval == NULL)
+    {
         fprintf(stderr, "fssb: error: cannot create log file %s\n",
-                        argv[i + 1]);
+                argv[i + 1]);
         exit(1);
     }
 
@@ -200,20 +213,23 @@ void set_parameters(int argc,
     *print_map = 0;
 
     int i;
-    for(i = 0; i < argc; i++) {
-        if(strcmp(argv[i], "-r") == 0)
+    for (i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-r") == 0)
             *cleanup = 1;
 
-        if(strcmp(argv[i], "-m") == 0)
+        if (strcmp(argv[i], "-m") == 0)
             *print_map = 1;
 
-        if(strcmp(argv[i], "-d") == 0) {
+        if (strcmp(argv[i], "-d") == 0)
+        {
             fclose(*debug_file);
             *debug_file = get_log_file_obj(argc, argv, i);
             i++;
         }
 
-        if(strcmp(argv[i], "-o") == 0) {
+        if (strcmp(argv[i], "-o") == 0)
+        {
             *log_file = get_log_file_obj(argc, argv, i);
             i++;
         }
@@ -231,19 +247,22 @@ int get_child_args_start_pos(int argc, char **argv)
 {
     int pos = 0;
 
-    while(pos < argc) {
-        if(strcmp(argv[pos], "--") == 0)
+    while (pos < argc)
+    {
+        if (strcmp(argv[pos], "--") == 0)
             break;
         pos++;
     }
 
-    if(pos == argc) {
+    if (pos == argc)
+    {
         fprintf(stderr, "fssb: error: no `--` found in arguments\n");
         fprintf(stderr, "usage: fssb -- <program> <args>\n");
         exit(1);
     }
 
-    if(pos == argc - 1) {
+    if (pos == argc - 1)
+    {
         fprintf(stderr, "fssb: error: nothing found after `--`\n");
         fprintf(stderr, "usage: fssb -- <program> <args>\n");
         exit(1);

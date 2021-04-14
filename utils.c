@@ -41,7 +41,8 @@ int syscall_breakpoint(pid_t child)
 {
     int status;
 
-    while(1) {
+    while (1)
+    {
         ptrace(PTRACE_SYSCALL, child, 0, 0);
         waitpid(child, &status, 0);
 
@@ -65,25 +66,39 @@ long get_syscall_arg(pid_t child, int n)
     struct user_regs_struct regs;
     ptrace(PTRACE_GETREGS, child, 0, &regs);
 
-    switch(n) {
+    switch (n)
+    {
 #ifdef __amd64__
     /* x86_64 has {rdi, rsi, rdx, r10, r8, r9} */
-    case 0: return regs.rdi;
-    case 1: return regs.rsi;
-    case 2: return regs.rdx;
-    case 3: return regs.r10;
-    case 4: return regs.r8;
-    case 5: return regs.r9;
+    case 0:
+        return regs.rdi;
+    case 1:
+        return regs.rsi;
+    case 2:
+        return regs.rdx;
+    case 3:
+        return regs.r10;
+    case 4:
+        return regs.r8;
+    case 5:
+        return regs.r9;
 #else
     /* x86 has {ebx, ecx, edx, esi, edi, ebp} */
-    case 0: return regs.ebx;
-    case 1: return regs.ecx;
-    case 2: return regs.edx;
-    case 3: return regs.esi;
-    case 4: return regs.edi;
-    case 5: return regs.ebp;
+    case 0:
+        return regs.ebx;
+    case 1:
+        return regs.ecx;
+    case 2:
+        return regs.edx;
+    case 3:
+        return regs.esi;
+    case 4:
+        return regs.edi;
+    case 5:
+        return regs.ebp;
 #endif
-    default: return -1L;
+    default:
+        return -1L;
     }
 }
 
@@ -93,27 +108,53 @@ long get_syscall_arg(pid_t child, int n)
  * @n:      which argument (max 6 args for any syscall)
  * @regval: register value
  */
-void set_syscall_arg(pid_t child, int n, long regval) {
+void set_syscall_arg(pid_t child, int n, long regval)
+{
     struct user_regs_struct regs;
     ptrace(PTRACE_GETREGS, child, 0, &regs);
 
-    switch(n) {
+    switch (n)
+    {
 #ifdef __amd64__
     /* x86_64 has {rdi, rsi, rdx, r10, r8, r9} */
-    case 0: regs.rdi = regval; break;
-    case 1: regs.rsi = regval; break;
-    case 2: regs.rdx = regval; break;
-    case 3: regs.r10 = regval; break;
-    case 4: regs.r8  = regval; break;
-    case 5: regs.r9  = regval; break;
+    case 0:
+        regs.rdi = regval;
+        break;
+    case 1:
+        regs.rsi = regval;
+        break;
+    case 2:
+        regs.rdx = regval;
+        break;
+    case 3:
+        regs.r10 = regval;
+        break;
+    case 4:
+        regs.r8 = regval;
+        break;
+    case 5:
+        regs.r9 = regval;
+        break;
 #else
     /* x86 has {ebx, ecx, edx, esi, edi, ebp} */
-    case 0: regs.ebx = regval; break;
-    case 1: regs.ecx = regval; break;
-    case 2: regs.edx = regval; break;
-    case 3: regs.esi = regval; break;
-    case 4: regs.edi = regval; break;
-    case 5: regs.ebp = regval; break;
+    case 0:
+        regs.ebx = regval;
+        break;
+    case 1:
+        regs.ecx = regval;
+        break;
+    case 2:
+        regs.edx = regval;
+        break;
+    case 3:
+        regs.esi = regval;
+        break;
+    case 4:
+        regs.edi = regval;
+        break;
+    case 5:
+        regs.ebp = regval;
+        break;
 #endif
     }
 
@@ -135,21 +176,24 @@ char *get_string(pid_t child, unsigned long addr)
     int alloc = 1024, copied = 0;
     unsigned long word;
 
-    while(1) {
-        if(copied + sizeof(word) > alloc) {  /* too big (that's what she said) */
+    while (1)
+    {
+        if (copied + sizeof(word) > alloc)
+        { /* too big (that's what she said) */
             alloc *= 2;
             str = (char *)realloc(str, alloc);
         }
 
         word = ptrace(PTRACE_PEEKDATA, child, addr + copied);
-        if(errno) {
+        if (errno)
+        {
             str[copied] = 0;
             break;
         }
         memcpy(str + copied, &word, sizeof(word));
 
         /* If we've already encountered null, break and return */
-        if(memchr(&word, 0, sizeof(word)) != NULL)
+        if (memchr(&word, 0, sizeof(word)) != NULL)
             break;
 
         copied += sizeof(word);
@@ -172,14 +216,15 @@ void write_string(pid_t child,
                   char *str)
 {
     int copied = 0;
-    while(1) {
+    while (1)
+    {
         unsigned long word;
         memcpy(&word, str + copied, sizeof(word));
         ptrace(PTRACE_POKETEXT, child, addr + copied, word);
 
         copied += sizeof(word);
 
-        if(memchr(&word, 0, sizeof(word)) != NULL)
+        if (memchr(&word, 0, sizeof(word)) != NULL)
             break;
     }
 }
@@ -199,18 +244,19 @@ char *md5sum(char *str)
     MD5(str, strlen(str), d);
 
     int i;
-    for(i = 0; i < 16; i++) {
+    for (i = 0; i < 16; i++)
+    {
         unsigned char x = d[i] >> 4;
-        if(x < 10)
-            retval[2*i] = '0' + x;
+        if (x < 10)
+            retval[2 * i] = '0' + x;
         else
-            retval[2*i] = 'a' + x - 10;
+            retval[2 * i] = 'a' + x - 10;
 
         x = d[i] & 0xf;
-        if(x < 10)
-            retval[2*i+1] = '0' + x;
+        if (x < 10)
+            retval[2 * i + 1] = '0' + x;
         else
-            retval[2*i+1] = 'a' + x - 10;
+            retval[2 * i + 1] = 'a' + x - 10;
     }
 
     retval[32] = 0;
@@ -229,7 +275,7 @@ char *proxy_path(char *prefix, char *file_path)
 {
     /* 32 for the MD5 hash, 1 for the null at the end */
     int malloc_len = strlen(prefix) + 32 + 1;
-    char *retval = (char *)malloc(malloc_len*sizeof(char));
+    char *retval = (char *)malloc(malloc_len * sizeof(char));
     *retval = 0;
 
     strcpy(retval, prefix);
@@ -247,21 +293,25 @@ char *proxy_path(char *prefix, char *file_path)
  * Returns a long corresponding to the starting address of the readonly
  * section of the child's memory.
  */
-long get_readonly_mem(pid_t child) {
+long get_readonly_mem(pid_t child)
+{
     char procfile[256];
     sprintf(procfile, "/proc/%d/maps", child);
     FILE *maps = fopen(procfile, "r");
 
-    while(1) {
+    while (1)
+    {
         char *buffer = NULL;
         size_t n = 0;
         ssize_t size = getline(&buffer, &n, maps);
-        if(size == -1) {
+        if (size == -1)
+        {
             free(buffer);
             break;
         }
 
-        if(strstr(buffer, "r-xp")) {
+        if (strstr(buffer, "r-xp"))
+        {
             long memaddr;
             sscanf(buffer, "%lx", &memaddr);
             return memaddr;

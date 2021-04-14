@@ -20,7 +20,8 @@
 #ifndef _ARGUMENT_H
 #define _ARGUMENT_H
 
-typedef struct {
+typedef struct
+{
     char arg[3], desc[128];
     int num_vals;
 } help;

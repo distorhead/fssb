@@ -38,13 +38,13 @@
 /* Return the register `reg` of `child`. */
 #ifndef get_reg
 #define get_reg(child, reg) ptrace(PTRACE_PEEKUSER, \
-                                   child, \
+                                   child,           \
                                    offsetof(struct user, regs.reg))
 #endif
 
 #ifndef set_reg
-#define set_reg(child, reg, val) ptrace(PTRACE_SETREGS, \
-                                        child, \
+#define set_reg(child, reg, val) ptrace(PTRACE_SETREGS,                  \
+                                        child,                           \
                                         offsetof(struct user, regs.reg), \
                                         val)
 #endif
