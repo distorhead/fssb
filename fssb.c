@@ -88,6 +88,54 @@ int handle_syscalls(pid_t child)
         fprintf(stderr, "fssb: sandbox directory: %s\n", SANDBOX_DIR);
         break;
     }
+
+    case SYS_openat:
+    {
+        /* int openat(int dirfd, const char *pathname, int flags); */
+
+        long orig_word = get_syscall_arg(child, 1);
+        char *pathname = get_string(child, orig_word);
+
+        int flags = get_syscall_arg(child, 2);
+
+        proxyfile *cur;
+
+        if (flags & O_APPEND || flags & O_CREAT || flags & O_WRONLY)
+        {
+            fprintf(debug_file, "open as write%s\n", pathname);
+            cur = search_proxyfile(list, pathname);
+            if (!cur)
+                cur = new_proxyfile(list, pathname);
+
+            write_string(child, write_slots[0], cur->proxy_path);
+            set_syscall_arg(child, 1, write_slots[0]);
+        }
+
+        if (flags == O_RDONLY)
+        {
+            /* If this file has been written to, then we should hijack the arg
+                   with the proxyfile because we want the process to see its own
+                   changes.  If this file has never been opened with write
+                   permissions, we can just give the same file (this is more
+                   performant than copying the file). */
+            cur = search_proxyfile(list, pathname);
+            fprintf(debug_file, "open as read %s\n", pathname);
+
+            if (cur)
+            {
+                write_string(child, write_slots[0], cur->proxy_path);
+                set_syscall_arg(child, 1, write_slots[0]);
+            }
+        }
+
+        int retval;
+        if (finish_and_return(child, syscall, &retval) == 0)
+            return 0;
+
+        set_syscall_arg(child, 1, orig_word);
+        break;
+    }
+
     case SYS_open:
     case SYS_creat:
     {
