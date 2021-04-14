@@ -32,6 +32,7 @@
 #include "proxyfile.h"
 #include "arguments.h"
 #include "utils.h"
+#include "callname.h"
 
 #define RDONLY_MEM_WRITE_SIZE 256
 
@@ -78,6 +79,8 @@ int handle_syscalls(pid_t child)
             write_slots[i] = first_rxp_mem + i * RDONLY_MEM_WRITE_SIZE;
     }
 
+    printf(">> syscall %s\n", callname(syscall));
+
     switch (syscall)
     {
     case SYS_exit:
@@ -102,7 +105,7 @@ int handle_syscalls(pid_t child)
 
         if (flags & O_APPEND || flags & O_CREAT || flags & O_WRONLY)
         {
-            fprintf(debug_file, "open as write%s\n", pathname);
+            fprintf(debug_file, "openat as write %s\n", pathname);
             cur = search_proxyfile(list, pathname);
             if (!cur)
                 cur = new_proxyfile(list, pathname);
@@ -119,7 +122,7 @@ int handle_syscalls(pid_t child)
                    permissions, we can just give the same file (this is more
                    performant than copying the file). */
             cur = search_proxyfile(list, pathname);
-            fprintf(debug_file, "open as read %s\n", pathname);
+            fprintf(debug_file, "openat as read %s\n", pathname);
 
             if (cur)
             {
@@ -150,7 +153,7 @@ int handle_syscalls(pid_t child)
 
         if (flags & O_APPEND || flags & O_CREAT || flags & O_WRONLY)
         {
-            fprintf(debug_file, "open as write%s\n", pathname);
+            fprintf(debug_file, "open as write %s\n", pathname);
             cur = search_proxyfile(list, pathname);
             if (!cur)
                 cur = new_proxyfile(list, pathname);
