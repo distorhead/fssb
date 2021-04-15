@@ -6,3 +6,4 @@ test
 
 # Jetbrains IDEs project directories
 .idea/
+.vscode

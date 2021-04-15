@@ -216,7 +216,7 @@ void set_syscall_arg(pid_t child, int n, long regval)
 char *get_string(pid_t child, unsigned long addr)
 {
     char *str = (char *)malloc(1024);
-    int alloc = 1024, copied = 0;
+    long unsigned int alloc = 1024, copied = 0;
     unsigned long word;
 
     while (1)
@@ -284,7 +284,7 @@ char *md5sum(char *str)
     char *retval = (char *)malloc(33);
 
     unsigned char d[17];
-    MD5(str, strlen(str), d);
+    MD5((const unsigned char *)str, strlen(str), d);
 
     int i;
     for (i = 0; i < 16; i++)

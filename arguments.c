@@ -174,7 +174,7 @@ FILE *get_log_file_obj(int argc, char **argv, int i)
 {
     FILE *retval;
 
-    struct stat sb;
+    // struct stat sb;
     if (i == argc - 1)
     {
         fprintf(stderr, "fssb: error: no logging file specified\n");

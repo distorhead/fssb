@@ -286,6 +286,7 @@ int handle_syscalls(pid_t child)
 
             /* register the new file as a known file for future reads */
             proxyfile *new = new_proxyfile(list, newpath);
+            (void)new;
         }
 
         free(new_old_name);
@@ -384,6 +385,8 @@ int process_child(int argc, char **argv)
 
 void init(int child)
 {
+    (void)child;
+
     struct stat sb;
 
     int i;

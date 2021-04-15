@@ -1,3 +1,5 @@
+CFLAGS  ?= -Wall -Wextra -Werror -march=corei7 -mtune=corei7
+
 components = fssb.o \
 			 arguments.o \
 			 utils.o \

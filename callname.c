@@ -1,8 +1,6 @@
 #include <sys/ptrace.h>
 #include <sys/syscall.h>
 
-static char *callname_buf[256];
-
 const char *callname(long call)
 {
     switch (call)
