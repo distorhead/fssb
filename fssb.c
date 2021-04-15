@@ -57,6 +57,7 @@ int finish_and_return(int child, int syscall, int *retval)
         fgets(buf, sizeof(buf), stdin);
     }
 
+    printf("finish_and_return\n");
     if (syscall_breakpoint(child) != 0)
         return 0;
 
@@ -66,8 +67,12 @@ int finish_and_return(int child, int syscall, int *retval)
 
 int handle_syscalls(pid_t child)
 {
+    printf("-- handle_syscalls %d\n", child);
     if (syscall_breakpoint(child) != 0)
+    {
+        printf("syscall_breakpoint exited\n");
         return 0;
+    }
 
     int syscall = get_reg(child, orig_eax);
 
@@ -101,7 +106,7 @@ int handle_syscalls(pid_t child)
 
         int flags = get_syscall_arg(child, 2);
 
-        proxyfile *cur;
+        proxyfile *cur = NULL;
 
         if (flags & O_APPEND || flags & O_CREAT || flags & O_WRONLY)
         {
@@ -134,6 +139,14 @@ int handle_syscalls(pid_t child)
         int retval;
         if (finish_and_return(child, syscall, &retval) == 0)
             return 0;
+
+        printf("openat return value: %d\n", retval);
+
+        if (cur)
+        {
+            printf("openat cur=%p set proxy_fd=%d\n", cur, retval);
+            cur->proxy_fd = retval;
+        }
 
         set_syscall_arg(child, 1, orig_word);
         break;
@@ -182,6 +195,11 @@ int handle_syscalls(pid_t child)
         int retval;
         if (finish_and_return(child, syscall, &retval) == 0)
             return 0;
+
+        if (cur)
+        {
+            cur->proxy_fd = retval;
+        }
 
         set_syscall_arg(child, 0, orig_word);
         break;
@@ -274,6 +292,35 @@ int handle_syscalls(pid_t child)
         free(new_new_name);
         break;
     }
+
+    case SYS_fstat:
+    {
+        /* int fstat(int fd, struct stat *statbuf); */
+
+        int fd = get_syscall_arg(child, 0);
+
+        printf("-- SYS_fstat %d\n", fd);
+
+        proxyfile *cur = search_proxyfile_by_fd(list, fd);
+
+        if (cur)
+        {
+            printf("-- SYS_fstat found proxyfile %s\n", cur->proxy_path);
+        }
+        else
+        {
+            printf("-- SYS_fstat not found proxyfile by fd %d\n", fd);
+        }
+
+        printf("-- SYS_fstat before finish_and_return\n");
+        int retval;
+        if (finish_and_return(child, syscall, &retval) == 0)
+            return 0;
+        printf("-- SYS_fstat after finish_and_return\n");
+
+        break;
+    }
+
     case SYS_stat:
     case SYS_lstat:
     case SYS_access:
@@ -298,6 +345,12 @@ int handle_syscalls(pid_t child)
             return 0;
 
         set_syscall_arg(child, 0, orig_word);
+        break;
+    }
+
+    default:
+    {
+        printf("NOT HANDLED SYSCALL: %d %s\n", syscall, callname(syscall));
         break;
     }
     }

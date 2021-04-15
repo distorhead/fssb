@@ -26,7 +26,7 @@ typedef struct
 {
     void *next, *prev;
     char *file_path, *md5, *proxy_path;
-    int fd;
+    int proxy_fd;
 } proxyfile;
 
 typedef struct
@@ -42,6 +42,8 @@ extern proxyfile_list *new_proxyfile_list();
 extern proxyfile *new_proxyfile(proxyfile_list *list, char *file_path);
 
 extern proxyfile *search_proxyfile(proxyfile_list *list, char *file_path);
+
+extern proxyfile *search_proxyfile_by_fd(proxyfile_list *list, int fd);
 
 extern void delete_proxyfile(proxyfile_list *list, proxyfile *pf);
 

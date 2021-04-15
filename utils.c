@@ -26,8 +26,10 @@
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <openssl/md5.h>
+#include <signal.h>
 
 #include "utils.h"
+#include "callname.h"
 
 /**
  * syscall_breakpoint - break at the entry or exit of a syscall
@@ -40,16 +42,57 @@
 int syscall_breakpoint(pid_t child)
 {
     int status;
+    int sig;
+    pid_t w;
 
     while (1)
     {
-        ptrace(PTRACE_SYSCALL, child, 0, 0);
-        waitpid(child, &status, 0);
+        int rc = ptrace(PTRACE_SYSCALL, child, 0, 0);
+        if (rc == -1)
+        {
+            printf("ERROR: %s\n", strerror(errno));
+        }
+        w = waitpid(child, &status, 0);
+        if (w == -1)
+        {
+            printf("waitpid error");
+            sleep(1);
+            exit(EXIT_FAILURE);
+        }
 
-        if (WIFSTOPPED(status) && WSTOPSIG(status) & 0x80)
-            return 0;
+        int syscall = get_reg(child, orig_eax);
+
+        printf("waitpid -> %d check syscall %d %s status %d\n", w, syscall, callname(syscall), status);
+
         if (WIFEXITED(status))
+        {
+            printf("child %d has been exited with status %d\n", child, WEXITSTATUS(status));
             return 1;
+        }
+        else if (WIFSIGNALED(status))
+        {
+            sig = WTERMSIG(status);
+            printf("child %d has been killed by the signal %d %s\n", child, sig, strsignal(sig));
+            return 0;
+        }
+        else if (WIFSTOPPED(status))
+        {
+            sig = WSTOPSIG(status);
+            printf("child %d has been stopped by the signal %d %s\n", child, sig, strsignal(sig));
+
+            if (sig == 0x04)
+            {
+                printf("Illegal instruction received by the child, terminating!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            if (WSTOPSIG(status) & 0x80)
+                return 0;
+        }
+        else if (WIFCONTINUED(status))
+        {
+            printf("child %d has been continued\n", child);
+        }
     }
 }
 

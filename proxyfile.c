@@ -102,6 +102,21 @@ proxyfile *search_proxyfile(proxyfile_list *list, char *file_path)
     return NULL;
 }
 
+proxyfile *search_proxyfile_by_fd(proxyfile_list *list, int fd)
+{
+    proxyfile *cur = list->head;
+    while (cur != NULL)
+    {
+        if (cur->proxy_fd == fd)
+        {
+            return cur;
+        }
+        cur = cur->next;
+    }
+
+    return NULL;
+}
+
 /**
  * delete_proxyfile - remove a proxyfile from the proxyfile_list
  * @list: the proxyfile_list
