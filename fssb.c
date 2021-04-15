@@ -57,7 +57,7 @@ int finish_and_return(int child, int syscall, int *retval)
         fgets(buf, sizeof(buf), stdin);
     }
 
-    printf("finish_and_return\n");
+    printf("BREAKPOINT finish_and_return syscall:%d %s\n", syscall, callname(syscall));
     if (syscall_breakpoint(child) != 0)
         return 0;
 
@@ -67,7 +67,7 @@ int finish_and_return(int child, int syscall, int *retval)
 
 int handle_syscalls(pid_t child)
 {
-    printf("-- handle_syscalls %d\n", child);
+    printf("BREAKPOINT -- handle_syscalls %d\n", child);
     if (syscall_breakpoint(child) != 0)
     {
         printf("syscall_breakpoint exited\n");
@@ -75,6 +75,7 @@ int handle_syscalls(pid_t child)
     }
 
     int syscall = get_reg(child, orig_eax);
+    printf("!!! %s START signal:%d handler\n", callname(syscall), syscall);
 
     if (syscall != SYS_execve && first_rxp_mem == -1)
     {
@@ -83,8 +84,6 @@ int handle_syscalls(pid_t child)
         for (i = 0; i < 6; i++)
             write_slots[i] = first_rxp_mem + i * RDONLY_MEM_WRITE_SIZE;
     }
-
-    printf(">> syscall %s\n", callname(syscall));
 
     switch (syscall)
     {
@@ -101,22 +100,26 @@ int handle_syscalls(pid_t child)
     {
         /* int openat(int dirfd, const char *pathname, int flags); */
 
+        int dirfd = get_syscall_arg(child, 0);
+
         long orig_word = get_syscall_arg(child, 1);
         char *pathname = get_string(child, orig_word);
 
         int flags = get_syscall_arg(child, 2);
 
+        printf("openat dirfd=%d pathname=%s flags=%d\n", dirfd, pathname, flags);
+
         proxyfile *cur = NULL;
 
         if (flags & O_APPEND || flags & O_CREAT || flags & O_WRONLY)
         {
-            fprintf(debug_file, "openat as write %s\n", pathname);
+            printf(">>>>>>>>>>>>>>>>>>>>>>>>> openat as write %s\n", pathname);
             cur = search_proxyfile(list, pathname);
             if (!cur)
                 cur = new_proxyfile(list, pathname);
 
-            write_string(child, write_slots[0], cur->proxy_path);
-            set_syscall_arg(child, 1, write_slots[0]);
+            write_string(child, write_slots[2], cur->proxy_path);
+            set_syscall_arg(child, 1, write_slots[2]);
         }
 
         if (flags == O_RDONLY)
@@ -127,12 +130,12 @@ int handle_syscalls(pid_t child)
                    permissions, we can just give the same file (this is more
                    performant than copying the file). */
             cur = search_proxyfile(list, pathname);
-            fprintf(debug_file, "openat as read %s\n", pathname);
+            printf(">>>>>>>>>>>>>>>>>>>>>>>>> openat as read %s\n", pathname);
 
             if (cur)
             {
-                write_string(child, write_slots[0], cur->proxy_path);
-                set_syscall_arg(child, 1, write_slots[0]);
+                write_string(child, write_slots[2], cur->proxy_path);
+                set_syscall_arg(child, 1, write_slots[2]);
             }
         }
 
@@ -141,12 +144,6 @@ int handle_syscalls(pid_t child)
             return 0;
 
         printf("openat return value: %d\n", retval);
-
-        if (cur)
-        {
-            printf("openat cur=%p set proxy_fd=%d\n", cur, retval);
-            cur->proxy_fd = retval;
-        }
 
         set_syscall_arg(child, 1, orig_word);
         break;

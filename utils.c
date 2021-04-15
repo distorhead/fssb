@@ -52,6 +52,10 @@ int syscall_breakpoint(pid_t child)
         {
             printf("ERROR: %s\n", strerror(errno));
         }
+        else
+        {
+            printf("PTRACE SYSCALL RC=%d\n", rc);
+        }
         w = waitpid(child, &status, 0);
         if (w == -1)
         {
@@ -80,9 +84,15 @@ int syscall_breakpoint(pid_t child)
             sig = WSTOPSIG(status);
             printf("child %d has been stopped by the signal %d %s\n", child, sig, strsignal(sig));
 
-            if (sig == 0x04)
+            if (sig == 4)
             {
                 printf("Illegal instruction received by the child, terminating!\n");
+                exit(EXIT_FAILURE);
+            }
+
+            if (sig == 11)
+            {
+                printf("Segmentation fault received by the child, terminating!\n");
                 exit(EXIT_FAILURE);
             }
 
